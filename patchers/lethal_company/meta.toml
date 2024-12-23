@@ -5,6 +5,7 @@ build_id = 16741928
 [exe]
 arch = "X64"
 os = "Windows"
+file = "Lethal Company.exe"
 
 [patcher]
 type = "Quick"
