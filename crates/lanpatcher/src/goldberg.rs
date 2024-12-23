@@ -1,3 +1,7 @@
+use crate::{
+    meta::{self, AppId},
+    steam_api,
+};
 use std::path::Path;
 
 static GOLDBERG_WIN_X86: &[u8] = include_bytes!("../../../goldberg_emu/experimental/steam_api.dll");
@@ -9,36 +13,12 @@ static GOLDBERG_LINUX_X86: &[u8] =
 static GOLDBERG_LINUX_X64: &[u8] =
     include_bytes!("../../../goldberg_emu/linux/x86_64/libsteam_api.so");
 
-#[derive(Debug, Clone, Copy)]
-pub enum Arch {
-    X86,
-    X64,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Os {
-    Windows,
-    Linux,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Goldberg {
-    pub arch: Arch,
-    pub os: Os,
-}
-
-impl Goldberg {
-    pub fn new(arch: Arch, os: Os) -> Self {
-        Self { arch, os }
-    }
-
-    pub fn get_lib_data(self) -> &'static [u8] {
-        match (self.os, self.arch) {
-            (Os::Windows, Arch::X86) => GOLDBERG_WIN_X86,
-            (Os::Windows, Arch::X64) => GOLDBERG_WIN_X64,
-            (Os::Linux, Arch::X86) => GOLDBERG_LINUX_X86,
-            (Os::Linux, Arch::X64) => GOLDBERG_LINUX_X64,
-        }
+pub fn lib_data(version: steam_api::Version) -> &'static [u8] {
+    match (version.arch, version.os) {
+        (meta::Arch::X86, meta::Os::Windows) => GOLDBERG_WIN_X86,
+        (meta::Arch::X64, meta::Os::Windows) => GOLDBERG_WIN_X64,
+        (meta::Arch::X86, meta::Os::Linux) => GOLDBERG_LINUX_X86,
+        (meta::Arch::X64, meta::Os::Linux) => GOLDBERG_LINUX_X64,
     }
 }
 
@@ -46,30 +26,28 @@ impl Goldberg {
 ///
 /// # Arguments
 ///
-/// * `path` - The path to install the `steam_api(64).dll`/`libsteam_api.so`, and `steam_appid.txt`.
-pub async fn install(dir: &Path, goldberg: Goldberg, app_id: u32) -> Result<(), crate::Error> {
-    tracing::info!(?dir, "Installing Goldberg");
+/// * `path` - The path to install the `steam_api(64).dll`/`libsteam_api.so`.
+/// * `version` - The version of the library to install.
+/// * `app_id` - The AppID of the game.
+pub fn install(
+    path: &Path,
+    version: steam_api::Version,
+    app_id: AppId,
+) -> Result<(), crate::Error> {
+    tracing::info!(?path, "Installing Goldberg");
 
-    let data = goldberg.get_lib_data();
+    let data = lib_data(version);
 
-    let file_name = match goldberg.os {
-        Os::Windows => match goldberg.arch {
-            Arch::X86 => "steam_api.dll",
-            Arch::X64 => "steam_api64.dll",
-        },
-        Os::Linux => "libsteam_api.so",
-    };
+    std::fs::write(path, data)?;
 
-    let path = dir.join(file_name);
-
-    tokio::fs::write(&path, data).await?;
+    let dir = path.parent().unwrap();
 
     let app_id_path = dir.join("steam_appid.txt");
-    tokio::fs::write(&app_id_path, app_id.to_string()).await?;
+    std::fs::write(&app_id_path, app_id.0.to_string())?;
 
     // Goldberg disables non-LAN connections by default. This file disables that behavior.
     let disable_lan_only = dir.join("disable_lan_only.txt");
-    tokio::fs::write(&disable_lan_only, "1").await?;
+    std::fs::write(&disable_lan_only, "1")?;
 
     Ok(())
 }
