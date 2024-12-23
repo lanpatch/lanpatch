@@ -1,10 +1,7 @@
-use rhai::{CustomType, Dynamic, Engine, EvalAltResult, Scope, TypeBuilder};
-use std::path::{Path, PathBuf};
+use rhai::{Dynamic, Engine, EvalAltResult, Scope};
+use std::path::PathBuf;
 
-use crate::{
-    meta::{AppId, GameMeta},
-    steam_api::Library,
-};
+use crate::meta::{AppId, GameMeta};
 
 pub fn run_patcher(
     rhai_src: impl AsRef<str>,
@@ -42,7 +39,7 @@ pub fn run_patcher(
     let ast = engine.compile(rhai_src)?;
 
     let mut scope = Scope::new();
-    let result = engine.call_fn::<()>(&mut scope, &ast, "patch", (path.into(), meta.clone()))?;
+    engine.call_fn::<()>(&mut scope, &ast, "patch", (path.into(), meta.clone()))?;
 
     Ok(())
 }
