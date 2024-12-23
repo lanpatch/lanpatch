@@ -1,17 +1,15 @@
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
+pub mod game;
 pub mod goldberg;
+pub mod scripts;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
-
-
-#[derive(Debug, Clone, Copy)]
-pub struct AppId(pub u32);
 
 /// Walks through the game directory and finds the `steam_api(64).dll`/`libsteam_api.so` files.
 pub async fn find_steam_dlls(game_root: &Path) -> Result<Vec<PathBuf>, Error> {

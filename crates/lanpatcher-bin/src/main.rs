@@ -1,9 +1,19 @@
-use tokio::runtime::Runtime;
+use std::path::Path;
 
-mod rhai;
+use lanpatcher::game::GameMeta;
 
 fn main() {
-    rhai::do_thing().unwrap();
+    lanpatcher::scripts::run_patcher(
+        "",
+        GameMeta {
+            steam: lanpatcher::game::SteamMeta {
+                app_id: 12345,
+                build_id: 67890,
+            },
+        },
+        Path::new("C:\\Games\\MyGame"),
+    )
+    .unwrap();
     // Runtime::new().unwrap().block_on(async {
     //     let dir = std::path::Path::new("C:\\Games\\MyGame");
     //     let goldberg = lanpatch::goldberg::Goldberg::new(

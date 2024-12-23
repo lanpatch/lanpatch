@@ -117,11 +117,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "lanpatch"
+name = "lanpatcher"
 version = "0.1.0"
 dependencies = [
  "rhai",
  "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "lanpatcher-bin"
+version = "0.1.0"
+dependencies = [
+ "lanpatcher",
  "tokio",
  "tracing",
  "tracing-subscriber",

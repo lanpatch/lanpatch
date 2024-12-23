@@ -1,0 +1,11 @@
+[package]
+name = "lanpatcher-bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.42.0", features = ["rt", "fs", "rt-multi-thread"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+lanpatcher = { path = "../lanpatcher" }

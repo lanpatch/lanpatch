@@ -1,0 +1,10 @@
+[package]
+name = "lanpatcher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = "2.0.9"
+tracing = "0.1.41"
+tokio = { version = "1.42.0", features = ["fs"] }
+rhai = "1.20.1"

@@ -1,10 +1,13 @@
 use std::path::Path;
 
-static GOLDBERG_WIN_X86: &[u8] = include_bytes!("../goldberg_emu/experimental/steam_api.dll");
-static GOLDBERG_WIN_X64: &[u8] = include_bytes!("../goldberg_emu/experimental/steam_api64.dll");
+static GOLDBERG_WIN_X86: &[u8] = include_bytes!("../../../goldberg_emu/experimental/steam_api.dll");
+static GOLDBERG_WIN_X64: &[u8] =
+    include_bytes!("../../../goldberg_emu/experimental/steam_api64.dll");
 
-static GOLDBERG_LINUX_X86: &[u8] = include_bytes!("../goldberg_emu/linux/x86/libsteam_api.so");
-static GOLDBERG_LINUX_X64: &[u8] = include_bytes!("../goldberg_emu/linux/x86_64/libsteam_api.so");
+static GOLDBERG_LINUX_X86: &[u8] =
+    include_bytes!("../../../goldberg_emu/linux/x86/libsteam_api.so");
+static GOLDBERG_LINUX_X64: &[u8] =
+    include_bytes!("../../../goldberg_emu/linux/x86_64/libsteam_api.so");
 
 #[derive(Debug, Clone, Copy)]
 pub enum Arch {
@@ -44,11 +47,7 @@ impl Goldberg {
 /// # Arguments
 ///
 /// * `path` - The path to install the `steam_api(64).dll`/`libsteam_api.so`, and `steam_appid.txt`.
-pub async fn install(
-    dir: &Path,
-    goldberg: Goldberg,
-    app_id: crate::AppId,
-) -> Result<(), crate::Error> {
+pub async fn install(dir: &Path, goldberg: Goldberg, app_id: u32) -> Result<(), crate::Error> {
     tracing::info!(?dir, "Installing Goldberg");
 
     let data = goldberg.get_lib_data();
@@ -66,7 +65,7 @@ pub async fn install(
     tokio::fs::write(&path, data).await?;
 
     let app_id_path = dir.join("steam_appid.txt");
-    tokio::fs::write(&app_id_path, app_id.0.to_string()).await?;
+    tokio::fs::write(&app_id_path, app_id.to_string()).await?;
 
     // Goldberg disables non-LAN connections by default. This file disables that behavior.
     let disable_lan_only = dir.join("disable_lan_only.txt");
