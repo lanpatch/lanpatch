@@ -57,10 +57,12 @@ pub struct SteamMeta {
 }
 
 /// The executable metadata of the game.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, CustomType)]
+#[derive(Debug, Clone, Deserialize, Serialize, CustomType)]
 pub struct ExecutableMeta {
     /// The architecture of the executable.
     pub arch: Arch,
     /// The operating system of the executable.
     pub os: Os,
+    /// A file that is unique to the game, relative to the game directory.
+    pub file: String,
 }

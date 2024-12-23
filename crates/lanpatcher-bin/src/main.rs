@@ -12,11 +12,12 @@ use lanpatcher::meta::{AppId, GameMeta};
 #[command(version, about, long_about = None)]
 struct Args {
     /// The app ID of the game to patch.
+    ///
+    /// If not provided, the patcher will attempt to determine the app ID from the game directory.
     #[arg(short, long)]
-    app_id: u32,
+    app_id: Option<u32>,
 
     /// The path to the game directory.
-    #[arg(short, long)]
     game_dir: PathBuf,
 }
 
@@ -55,15 +56,24 @@ fn main() -> Result<()> {
 
     let patchers = index_patchers(Path::new("patchers"))?;
 
-    let drg = patchers
-        .get(&AppId(app_id))
-        .context("couldn't find patcher for app")?;
+    let game = if let Some(app_id) = app_id {
+        patchers
+            .get(&AppId(app_id))
+            .context("couldn't find patcher for app")?
+    } else {
+        tracing::info!("App ID not provided, attempting to determine from game directory");
 
-    tracing::info!(?drg, "Got patcher");
+        patchers
+            .values()
+            .find(|game| game_dir.join(&game.exe.file).exists())
+            .context("couldn't find patcher for game")?
+    };
+
+    tracing::info!(?game, "Got patcher");
 
     tracing::info!(?game_dir, "Patching...");
 
-    drg.patcher.run(&game_dir, drg)?;
+    game.patcher.run(&game_dir, game)?;
 
     Ok(())
 }

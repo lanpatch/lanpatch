@@ -5,7 +5,7 @@ build_id = 16678700
 [exe]
 arch = "X64"
 os = "Windows"
-exe = "FSD.exe"
+file = "FSD.exe"
 
 [patcher]
 type = "Quick"
