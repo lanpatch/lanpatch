@@ -14,4 +14,6 @@ pub enum Error {
     Rhai(#[from] Box<EvalAltResult>),
     #[error("error parsing script: {0}")]
     RhaiParse(#[from] rhai::ParseError),
+    #[error("error reading directory: {0}")]
+    WalkDir(#[from] walkdir::Error),
 }

@@ -1,7 +1,24 @@
-use color_eyre::eyre::Result;
-use std::{collections::HashMap, path::Path};
+use clap::Parser;
+use color_eyre::eyre::{ContextCompat, Result};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use lanpatcher::meta::{AppId, GameMeta};
+
+/// A patcher for Steam games that allows for LAN-only play.
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// The app ID of the game to patch.
+    #[arg(short, long)]
+    app_id: u32,
+
+    /// The path to the game directory.
+    #[arg(short, long)]
+    game_dir: PathBuf,
+}
 
 fn index_patchers(root: &Path) -> Result<HashMap<AppId, GameMeta>> {
     tracing::info!(?root, "Indexing patchers");
@@ -34,18 +51,19 @@ fn main() -> Result<()> {
 
     color_eyre::install()?;
 
+    let Args { app_id, game_dir } = Args::parse();
+
     let patchers = index_patchers(Path::new("patchers"))?;
 
-    let drg = patchers.get(&AppId(548430)).unwrap();
+    let drg = patchers
+        .get(&AppId(app_id))
+        .context("couldn't find patcher for app")?;
 
     tracing::info!(?drg, "Got patcher");
 
-    let mut args = std::env::args().skip(1);
-    let game_dir = args.next().unwrap();
+    tracing::info!(?game_dir, "Patching...");
 
-    tracing::info!(game_dir, "Patching...");
-
-    drg.patcher.run(drg, Path::new(&game_dir))?;
+    drg.patcher.run(&game_dir, drg)?;
 
     Ok(())
 }

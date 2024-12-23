@@ -1,4 +1,4 @@
-use rhai::{CustomType, Engine, EvalAltResult, Scope, TypeBuilder};
+use rhai::{CustomType, Dynamic, Engine, EvalAltResult, Scope, TypeBuilder};
 use std::path::{Path, PathBuf};
 
 use crate::{
@@ -8,8 +8,8 @@ use crate::{
 
 pub fn run_patcher(
     rhai_src: impl AsRef<str>,
-    meta: &crate::meta::GameMeta,
     path: impl Into<PathBuf>,
+    meta: &crate::meta::GameMeta,
 ) -> Result<(), crate::Error> {
     let mut engine = Engine::new();
 
@@ -20,23 +20,20 @@ pub fn run_patcher(
     engine.build_type::<crate::steam_api::Version>();
 
     fn install_goldberg(
-        path: &Path,
+        dll_path: PathBuf,
         version: crate::steam_api::Version,
-        app_id: u32,
+        app_id: AppId,
     ) -> Result<(), Box<EvalAltResult>> {
-        if let Err(e) = crate::goldberg::install(path, version, AppId(app_id)) {
+        if let Err(e) = crate::goldberg::install(&dll_path, version, app_id) {
             return Err(e.to_string().into());
         };
         Ok(())
     }
     engine.register_fn("install_goldberg", install_goldberg);
 
-    fn find_steam_dlls(
-        game_root: &Path,
-        meta: GameMeta,
-    ) -> Result<Vec<Library>, Box<EvalAltResult>> {
-        match crate::steam_api::find_steam_dlls(game_root, &meta) {
-            Ok(paths) => Ok(paths),
+    fn find_steam_dlls(game_root: PathBuf, meta: GameMeta) -> Result<Dynamic, Box<EvalAltResult>> {
+        match crate::steam_api::find_steam_dlls(&game_root, &meta) {
+            Ok(paths) => Ok(paths.into()),
             Err(e) => Err(e.to_string().into()),
         }
     }
@@ -45,7 +42,7 @@ pub fn run_patcher(
     let ast = engine.compile(rhai_src)?;
 
     let mut scope = Scope::new();
-    let result = engine.call_fn::<()>(&mut scope, &ast, "patch", (meta.clone(), path.into()))?;
+    let result = engine.call_fn::<()>(&mut scope, &ast, "patch", (path.into(), meta.clone()))?;
 
     Ok(())
 }

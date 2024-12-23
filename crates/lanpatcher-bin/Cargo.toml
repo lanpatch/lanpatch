@@ -10,3 +10,4 @@ tracing-subscriber = "0.3.19"
 lanpatcher = { path = "../lanpatcher" }
 color-eyre = "0.6.3"
 toml = "0.8.19"
+clap = { version = "4.5.23", features = ["derive"] }

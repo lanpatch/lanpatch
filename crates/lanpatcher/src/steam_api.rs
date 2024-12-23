@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
+use walkdir::WalkDir;
 
 use crate::{meta, Error};
 
@@ -27,50 +28,41 @@ pub struct Library {
 pub fn find_steam_dlls(game_root: &Path, meta: &meta::GameMeta) -> Result<Vec<Library>, Error> {
     let mut found = Vec::with_capacity(1);
 
-    let mut walker_stack = vec![];
-    let mut current_walker = std::fs::read_dir(game_root)?;
+    tracing::info!(?game_root, "Searching for Steam DLLs");
 
-    loop {
-        while let Some(entry) = current_walker.next() {
-            let entry = entry?;
+    for entry in WalkDir::new(game_root) {
+        let entry = entry?;
 
-            let path = entry.path();
+        let path = entry.path().to_path_buf();
 
-            if path.is_file() {
-                if let Some(file_name) = path.file_name() {
-                    match file_name {
-                        x if x == "steam_api.dll" => {
-                            found.push(Library {
-                                path,
-                                version: Version::new(meta::Arch::X86, meta::Os::Windows),
-                            });
-                        }
-                        x if x == "steam_api64.dll" => {
-                            found.push(Library {
-                                path,
-                                version: Version::new(meta::Arch::X64, meta::Os::Windows),
-                            });
-                        }
-                        x if x == "libsteam_api.so" => {
-                            found.push(Library {
-                                path,
-                                version: Version::new(meta.exe.arch, meta::Os::Linux),
-                            });
-                        }
-                        _ => {}
+        if path.is_file() {
+            if let Some(file_name) = path.file_name() {
+                match file_name {
+                    x if x == "steam_api.dll" => {
+                        found.push(Library {
+                            path,
+                            version: Version::new(meta::Arch::X86, meta::Os::Windows),
+                        });
                     }
+                    x if x == "steam_api64.dll" => {
+                        found.push(Library {
+                            path,
+                            version: Version::new(meta::Arch::X64, meta::Os::Windows),
+                        });
+                    }
+                    x if x == "libsteam_api.so" => {
+                        found.push(Library {
+                            path,
+                            version: Version::new(meta.exe.arch, meta::Os::Linux),
+                        });
+                    }
+                    _ => {}
                 }
-            } else {
-                let old_walker = std::mem::replace(&mut current_walker, std::fs::read_dir(path)?);
-                walker_stack.push(old_walker);
             }
         }
-        if let Some(old_walker) = walker_stack.pop() {
-            current_walker = old_walker;
-        } else {
-            break;
-        }
     }
+
+    tracing::info!(?found, "Found Steam DLLs");
 
     Ok(found)
 }

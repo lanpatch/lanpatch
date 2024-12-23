@@ -12,6 +12,8 @@ pub enum Method {
 
 impl Method {
     pub fn run(self, path: &std::path::Path, meta: &GameMeta) -> Result<(), crate::Error> {
+        tracing::info!(?self, "Running quick patcher");
+
         match self {
             Self::Goldberg => {
                 let app_id = meta.steam.app_id;
