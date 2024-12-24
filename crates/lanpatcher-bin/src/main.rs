@@ -58,7 +58,7 @@ fn main() -> Result<()> {
         tracing::error!(?e, "Error occurred");
     }
 
-    tracing::info!("Waiting for user input to exit...");
+    tracing::info!("Press any key to close...");
 
     std::io::stdin().read_line(&mut String::new())?;
 
@@ -70,14 +70,18 @@ fn real_main() -> Result<()> {
 
     let mut patchers = HashMap::new();
 
-    index_patchers(
+    if let Err(e) = index_patchers(
         &mut patchers,
         &std::env::current_exe()?
             .parent()
             .context("exe directory has no parent")?
             .join("patchers"),
-    )?;
-    index_patchers(&mut patchers, Path::new("patchers"))?;
+    ) {
+        tracing::warn!(?e, "Failed to index built-in patchers");
+    }
+    if let Err(e) = index_patchers(&mut patchers, Path::new("patchers")) {
+        tracing::warn!(?e, "Failed to index patchers directory");
+    }
 
     let game = if let Some(app_id) = app_id {
         patchers
