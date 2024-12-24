@@ -43,11 +43,11 @@ pub fn install(
     let dir = path.parent().unwrap();
 
     let app_id_path = dir.join("steam_appid.txt");
-    std::fs::write(&app_id_path, app_id.0.to_string())?;
+    std::fs::write(app_id_path, app_id.0.to_string())?;
 
     // Goldberg disables non-LAN connections by default. This file disables that behavior.
     let disable_lan_only = dir.join("disable_lan_only.txt");
-    std::fs::write(&disable_lan_only, "1")?;
+    std::fs::write(disable_lan_only, "1")?;
 
     Ok(())
 }

@@ -21,10 +21,8 @@ struct Args {
     game_dir: PathBuf,
 }
 
-fn index_patchers(root: &Path) -> Result<HashMap<AppId, GameMeta>> {
+fn index_patchers(patchers: &mut HashMap<AppId, GameMeta>, root: &Path) -> Result<()> {
     tracing::info!(?root, "Indexing patchers");
-
-    let mut patchers = HashMap::new();
 
     for entry in std::fs::read_dir(root)? {
         let entry = entry?;
@@ -41,10 +39,12 @@ fn index_patchers(root: &Path) -> Result<HashMap<AppId, GameMeta>> {
 
         meta.patcher_dir = path;
 
-        patchers.insert(meta.steam.app_id, meta);
+        if let Some(old) = patchers.insert(meta.steam.app_id, meta) {
+            tracing::warn!(?old, "Duplicate app ID found");
+        };
     }
 
-    Ok(patchers)
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -54,7 +54,16 @@ fn main() -> Result<()> {
 
     let Args { app_id, game_dir } = Args::parse();
 
-    let patchers = index_patchers(Path::new("patchers"))?;
+    let mut patchers = HashMap::new();
+
+    index_patchers(
+        &mut patchers,
+        &std::env::current_exe()?
+            .parent()
+            .context("exe directory has no parent")?
+            .join("patchers"),
+    )?;
+    index_patchers(&mut patchers, Path::new("patchers"))?;
 
     let game = if let Some(app_id) = app_id {
         patchers
