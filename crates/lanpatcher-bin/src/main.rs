@@ -104,9 +104,5 @@ fn real_main() -> Result<()> {
 
     tracing::info!("Done!");
 
-    tracing::info!("Waiting for user input to exit...");
-
-    std::io::stdin().read_line(&mut String::new())?;
-
     Ok(())
 }
