@@ -1,0 +1,12 @@
+[steam]
+app_id = 2881650
+build_id = 16750464
+
+[exe]
+arch = "X64"
+os = "Windows"
+file = "Content Warning.exe"
+
+[patcher]
+type = "Quick"
+method = "Goldberg"

@@ -1,0 +1,12 @@
+[steam]
+app_id = 648800
+build_id = 10199006
+
+[exe]
+arch = "X64"
+os = "Windows"
+file = "Raft.exe"
+
+[patcher]
+type = "Quick"
+method = "Goldberg"

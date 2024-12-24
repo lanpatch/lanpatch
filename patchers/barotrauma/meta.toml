@@ -1,0 +1,12 @@
+[steam]
+app_id = 602960
+build_id = 16693477
+
+[exe]
+arch = "X64"
+os = "Windows"
+file = "Barotrauma.exe"
+
+[patcher]
+type = "Quick"
+method = "Goldberg"
