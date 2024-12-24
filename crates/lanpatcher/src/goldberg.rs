@@ -2,7 +2,7 @@ use crate::{
     meta::{self, AppId},
     steam_api,
 };
-use std::path::Path;
+use std::{fs::File, io::Write, path::Path};
 
 static GOLDBERG_WIN_X86: &[u8] = include_bytes!("../../../goldberg_emu/experimental/steam_api.dll");
 static GOLDBERG_WIN_X64: &[u8] =
@@ -48,6 +48,18 @@ pub fn install(
     // Goldberg disables non-LAN connections by default. This file disables that behavior.
     let disable_lan_only = dir.join("disable_lan_only.txt");
     std::fs::write(disable_lan_only, "1")?;
+
+    // enable connections from tailscale
+
+    let steam_settings_dir = dir.join("steam_settings");
+
+    std::fs::create_dir_all(&steam_settings_dir)?;
+
+    let custom_broadcasts = steam_settings_dir.join("custom_broadcasts.txt");
+    let mut custom_broadcasts = File::create(custom_broadcasts)?;
+    for octet in 1..255 {
+        custom_broadcasts.write_all(format!("100.64.0.{octet}\n").as_bytes())?;
+    }
 
     Ok(())
 }
