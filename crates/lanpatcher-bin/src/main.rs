@@ -52,6 +52,20 @@ fn main() -> Result<()> {
 
     color_eyre::install()?;
 
+    let out = real_main();
+
+    if let Err(ref e) = out {
+        tracing::error!(?e, "Error occurred");
+    }
+
+    tracing::info!("Waiting for user input to exit...");
+
+    std::io::stdin().read_line(&mut String::new())?;
+
+    out
+}
+
+fn real_main() -> Result<()> {
     let Args { app_id, game_dir } = Args::parse();
 
     let mut patchers = HashMap::new();
@@ -83,6 +97,12 @@ fn main() -> Result<()> {
     tracing::info!(?game_dir, "Patching...");
 
     game.patcher.run(&game_dir, game)?;
+
+    tracing::info!("Done!");
+
+    tracing::info!("Waiting for user input to exit...");
+
+    std::io::stdin().read_line(&mut String::new())?;
 
     Ok(())
 }
