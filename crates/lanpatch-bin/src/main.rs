@@ -1,11 +1,16 @@
 use clap::Parser;
 use color_eyre::eyre::{ContextCompat, Result};
+use sha2::Digest;
 use std::{
-    collections::HashMap,
+    collections::{BTreeSet, HashMap},
     path::{Path, PathBuf},
 };
+use walkdir::WalkDir;
 
-use lanpatcher::meta::{AppId, GameMeta};
+use lanpatch::{
+    meta::{AppId, Arch, ExecutableMeta, GameMeta, Os, Patcher, SteamMeta},
+    patchers::quick,
+};
 
 /// A patcher for Steam games that allows for LAN-only play.
 #[derive(Parser, Debug)]
@@ -19,6 +24,13 @@ struct Args {
 
     /// The path to the game directory.
     game_dir: PathBuf,
+
+    /// The method to use if the app ID couldn't be determined.
+    ///
+    /// The Goldberg app ID will be determined by a
+    /// hash of the file names.
+    #[arg(short, long, default_value = "goldberg")]
+    method: quick::Method,
 }
 
 fn index_patchers(patchers: &mut HashMap<AppId, GameMeta>, root: &Path) -> Result<()> {
@@ -66,7 +78,11 @@ fn main() -> Result<()> {
 }
 
 fn real_main() -> Result<()> {
-    let Args { app_id, game_dir } = Args::parse();
+    let Args {
+        app_id,
+        game_dir,
+        method,
+    } = Args::parse();
 
     let mut patchers = HashMap::new();
 
@@ -87,20 +103,64 @@ fn real_main() -> Result<()> {
         patchers
             .get(&AppId(app_id))
             .context("couldn't find patcher for app")?
+            .clone()
     } else {
         tracing::info!("App ID not provided, attempting to determine from game directory");
 
-        patchers
+        match patchers
             .values()
             .find(|game| game_dir.join(&game.exe.file).exists())
-            .context("couldn't find patcher for game")?
+        {
+            Some(game) => game.clone(),
+            None => {
+                tracing::warn!("Couldn't determine app ID from game directory");
+                tracing::info!(default_method = ?method, "Using default method");
+
+                let mut file_names = WalkDir::new(&game_dir)
+                    .into_iter()
+                    .filter_map(Result::ok)
+                    .filter(|entry| entry.file_type().is_file())
+                    .map(|entry| entry.file_name().to_string_lossy().to_string())
+                    .collect::<BTreeSet<_>>();
+
+                file_names.extend(method.files_added(&game_dir, Arch::X64));
+
+                let mut hasher = sha2::Sha256::new();
+                for file_name in file_names {
+                    hasher.update(file_name.as_bytes());
+                }
+                let hash = hasher.finalize();
+
+                tracing::info!(?hash, "Hashed file names");
+
+                let app_id: u32 = u32::from_be_bytes(hash[..4].try_into().unwrap());
+
+                tracing::info!(?app_id, "Generated app ID");
+
+                let app_id = AppId(app_id);
+
+                GameMeta {
+                    steam: SteamMeta {
+                        app_id,
+                        build_id: 0,
+                    },
+                    exe: ExecutableMeta {
+                        file: String::new(),
+                        arch: Arch::X64,
+                        os: Os::Windows,
+                    },
+                    patcher: Patcher::Quick { method },
+                    patcher_dir: Default::default(),
+                }
+            }
+        }
     };
 
     tracing::info!(?game, "Got patcher");
 
     tracing::info!(?game_dir, "Patching...");
 
-    game.patcher.run(&game_dir, game)?;
+    game.patcher.run(&game_dir, &game)?;
 
     tracing::info!("Done!");
 

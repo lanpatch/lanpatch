@@ -4,7 +4,10 @@ use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
-use crate::{meta, Error};
+use crate::{
+    meta::{self, Arch},
+    Error,
+};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, CustomType)]
 pub struct Version {
@@ -25,7 +28,7 @@ pub struct Library {
 }
 
 /// Walks through the game directory and finds the `steam_api(64).dll`/`libsteam_api.so` files.
-pub fn find_steam_dlls(game_root: &Path, meta: &meta::GameMeta) -> Result<Vec<Library>, Error> {
+pub fn find_steam_dlls(game_root: &Path, arch: Arch) -> Result<Vec<Library>, Error> {
     let mut found = Vec::with_capacity(1);
 
     tracing::info!(?game_root, "Searching for Steam DLLs");
@@ -53,7 +56,7 @@ pub fn find_steam_dlls(game_root: &Path, meta: &meta::GameMeta) -> Result<Vec<Li
                     x if x == "libsteam_api.so" => {
                         found.push(Library {
                             path,
-                            version: Version::new(meta.exe.arch, meta::Os::Linux),
+                            version: Version::new(arch, meta::Os::Linux),
                         });
                     }
                     _ => {}

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/lanpatcher", "crates/lanpatcher-bin"]
+members = ["crates/lanpatch", "crates/lanpatch-bin"]
 
 [profile.release]
 lto = true

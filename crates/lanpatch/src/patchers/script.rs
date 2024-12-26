@@ -29,7 +29,7 @@ pub fn run_patcher(
     engine.register_fn("install_goldberg", install_goldberg);
 
     fn find_steam_dlls(game_root: PathBuf, meta: GameMeta) -> Result<Dynamic, Box<EvalAltResult>> {
-        match crate::steam_api::find_steam_dlls(&game_root, &meta) {
+        match crate::steam_api::find_steam_dlls(&game_root, meta.exe.arch) {
             Ok(paths) => Ok(paths.into()),
             Err(e) => Err(e.to_string().into()),
         }
